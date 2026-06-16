@@ -86,7 +86,14 @@ jwt:
 uv run uvicorn main:app --reload
 ```
 
-### 4. 访问 API 文档
+### 4. 导入数据库数据
+
+```bash
+docker cp database/init.sql admin:/tmp/init.sql
+docker exec admin bash -c "mysql -u root -p'your_password' --default-character-set=utf8mb4 south_admin < /tmp/init.sql"
+```
+
+### 5. 访问 API 文档
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc

@@ -1,4 +1,4 @@
-from config.database import async_engine
+from config.database import async_engine, sync_engine
 from models.base import Base
 
 # 导入所有模型，确保 Base.metadata 能发现它们
@@ -10,5 +10,5 @@ from models.system.log import SysLog
 
 
 async def create_tables():
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # 使用同步引擎创建表（避免 greenlet 问题）
+    Base.metadata.create_all(sync_engine)
