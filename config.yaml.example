@@ -1,0 +1,9 @@
+# 数据库配置
+database:
+  url: "mysql+aiomysql://root:your_password@localhost:3306/south_admin?charset=utf8mb4"
+
+# JWT 配置
+jwt:
+  secret_key: "your-secret-key-here"
+  algorithm: "HS256"
+  access_token_expire_minutes: 1440

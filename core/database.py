@@ -1,0 +1,14 @@
+from config.database import async_engine
+from models.base import Base
+
+# 导入所有模型，确保 Base.metadata 能发现它们
+from models.system.user import SysUser
+from models.system.role import SysRole
+from models.system.menu import SysMenu
+from models.system.permission import SysPermission
+from models.system.log import SysLog
+
+
+async def create_tables():
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
