@@ -47,8 +47,9 @@ def get_user_permissions(user) -> list:
     """获取用户权限列表"""
     permission_set = set()
     for role in user.roles:
-        for permission in role.permissions:
-            permission_set.add(permission.name)
+        for menu in role.menus:
+            if menu.permission:
+                permission_set.add(menu.permission.name)
     return list(permission_set)
 
 

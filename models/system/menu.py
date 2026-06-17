@@ -15,7 +15,6 @@ class SysMenu(Base):
     icon: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="图标")
     type: Mapped[int] = mapped_column(Integer, comment="类型 1=目录 2=菜单 3=按钮")
     router: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="路由地址")
-    rule: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="权限规则")
     order: Mapped[int] = mapped_column(Integer, default=0, comment="排序")
     state: Mapped[int] = mapped_column(Integer, default=1, comment="状态 0=隐藏 1=显示")
     parent_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sys_menu.id"), nullable=True, comment="父菜单ID")

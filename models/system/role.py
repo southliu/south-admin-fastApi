@@ -22,7 +22,6 @@ role_permission = Table(
     Column("permission_id", Integer, ForeignKey("sys_permission.id"), primary_key=True),
 )
 
-
 class SysRole(Base):
     __tablename__ = "sys_role"
 

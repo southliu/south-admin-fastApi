@@ -15,6 +15,7 @@ from crud.permission import (
 from schemas.response import ResponseModel
 from schemas.permission import CreatePermissionRequest, UpdatePermissionRequest
 from middleware.auth import get_current_user
+from models.base import format_datetime
 
 router = APIRouter(prefix="/permission", tags=["权限"])
 
@@ -50,8 +51,8 @@ async def get_permission_detail(
             "id": permission.id,
             "name": permission.name,
             "description": permission.description,
-            "createdAt": permission.create_at,
-            "updatedAt": permission.update_at,
+            "createdAt": format_datetime(permission.create_at),
+            "updatedAt": format_datetime(permission.update_at),
         }
     )
 

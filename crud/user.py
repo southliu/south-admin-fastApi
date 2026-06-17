@@ -6,6 +6,8 @@ from sqlalchemy.orm import selectinload
 
 from models.system.user import SysUser, user_role
 from models.system.role import SysRole
+from models.system.menu import SysMenu
+from models.base import format_datetime
 from schemas.user import CreateUserRequest, UpdateUserRequest
 from utils.security import hash_password
 
@@ -15,7 +17,10 @@ async def get_user_by_username(db: AsyncSession, username: str) -> Optional[SysU
     result = await db.execute(
         select(SysUser)
         .where(and_(SysUser.username == username, SysUser.is_deleted == 0))
-        .options(selectinload(SysUser.roles).selectinload(SysRole.permissions))
+        .options(
+            selectinload(SysUser.roles).selectinload(SysRole.menus).selectinload(SysMenu.permission),
+            selectinload(SysUser.roles).selectinload(SysRole.permissions),
+        )
     )
     return result.scalar_one_or_none()
 
@@ -25,7 +30,10 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[SysUser]:
     result = await db.execute(
         select(SysUser)
         .where(and_(SysUser.id == user_id, SysUser.is_deleted == 0))
-        .options(selectinload(SysUser.roles).selectinload(SysRole.permissions))
+        .options(
+            selectinload(SysUser.roles).selectinload(SysRole.menus).selectinload(SysMenu.permission),
+            selectinload(SysUser.roles).selectinload(SysRole.permissions),
+        )
     )
     return result.scalar_one_or_none()
 
@@ -67,8 +75,8 @@ async def get_user_page(
             "roles": [{"id": role.id, "name": role.name} for role in user.roles],
             "rolesName": ",".join(role_names),
             "roleCount": len(user.roles),
-            "createdAt": user.create_at,
-            "updatedAt": user.update_at,
+            "createdAt": format_datetime(user.create_at),
+            "updatedAt": format_datetime(user.update_at),
         })
 
     total_pages = total // page_size

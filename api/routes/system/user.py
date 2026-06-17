@@ -24,6 +24,7 @@ from schemas.user import (
 )
 from utils.security import verify_password, create_access_token
 from middleware.auth import get_current_user, get_user_permissions, get_user_role_ids
+from models.base import format_datetime
 
 router = APIRouter(prefix="/user", tags=["用户"])
 
@@ -144,8 +145,8 @@ async def get_user_detail(
             "status": user.status,
             "roleIds": roles,
             "roles": [{"id": role.id, "name": role.name} for role in user.roles],
-            "createdAt": user.create_at,
-            "updatedAt": user.update_at,
+            "createdAt": format_datetime(user.create_at),
+            "updatedAt": format_datetime(user.update_at),
         }
     )
 

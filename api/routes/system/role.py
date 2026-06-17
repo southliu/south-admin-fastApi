@@ -17,6 +17,7 @@ from crud.role import (
 from schemas.response import ResponseModel
 from schemas.role import CreateRoleRequest, UpdateRoleRequest, AuthorizeRoleRequest
 from middleware.auth import get_current_user
+from models.base import format_datetime
 
 router = APIRouter(prefix="/role", tags=["角色"])
 
@@ -54,8 +55,8 @@ async def get_role_detail(
             "id": role.id,
             "name": role.name,
             "description": role.description,
-            "createdAt": role.create_at,
-            "updatedAt": role.update_at,
+            "createdAt": format_datetime(role.create_at),
+            "updatedAt": format_datetime(role.update_at),
             "authorize": menu_ids,
         }
     )
@@ -141,8 +142,8 @@ async def get_role_authorize_handler(
 ):
     """获取角色授权信息"""
     try:
-        menu_ids = await get_role_authorize(db, roleId)
-        return ResponseModel(code=200, message="获取成功", data=menu_ids)
+        data = await get_role_authorize(db, roleId)
+        return ResponseModel(code=200, message="获取成功", data=data)
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 

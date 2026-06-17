@@ -27,7 +27,7 @@ router = APIRouter(prefix="/menu", tags=["菜单"])
 
 
 @router.get("/list", response_model=ResponseModel)
-async def get_menu_list_handler(
+async def get_menu_list_handlerget_menu_list_handler(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -82,7 +82,7 @@ async def create_menu_handler(
             "type": menu.type,
             "icon": menu.icon,
             "router": menu.router,
-            "rule": menu.rule,
+            "rule": menu.permission.name if menu.permission else None,
             "order": menu.order,
             "state": menu.state,
             "parentId": menu.parent_id,
@@ -108,7 +108,7 @@ async def update_menu_handler(
             "type": menu.type,
             "icon": menu.icon,
             "router": menu.router,
-            "rule": menu.rule,
+            "rule": menu.permission.name if menu.permission else None,
             "order": menu.order,
             "state": menu.state,
             "parentId": menu.parent_id,

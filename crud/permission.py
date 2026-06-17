@@ -4,6 +4,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.system.permission import SysPermission
+from models.base import format_datetime
 from schemas.permission import CreatePermissionRequest, UpdatePermissionRequest
 
 
@@ -55,8 +56,8 @@ async def get_permission_page(
             "id": permission.id,
             "name": permission.name,
             "description": permission.description,
-            "createdAt": permission.create_at,
-            "updatedAt": permission.update_at,
+            "createdAt": format_datetime(permission.create_at),
+            "updatedAt": format_datetime(permission.update_at),
         })
 
     total_pages = total // page_size

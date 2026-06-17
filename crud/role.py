@@ -4,9 +4,10 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models.system.role import SysRole, role_menu, role_permission
+from models.system.role import SysRole, role_menu
 from models.system.menu import SysMenu
 from models.system.permission import SysPermission
+from models.base import format_datetime
 from schemas.role import CreateRoleRequest, UpdateRoleRequest
 
 
@@ -16,7 +17,6 @@ async def get_role_by_id(db: AsyncSession, role_id: int) -> Optional[SysRole]:
         select(SysRole)
         .where(and_(SysRole.id == role_id, SysRole.is_deleted == 0))
         .options(selectinload(SysRole.menus))
-        .options(selectinload(SysRole.permissions))
     )
     return result.scalar_one_or_none()
 
@@ -60,8 +60,8 @@ async def get_role_page(
             "id": role.id,
             "name": role.name,
             "description": role.description,
-            "createdAt": role.create_at,
-            "updatedAt": role.update_at,
+            "createdAt": format_datetime(role.create_at),
+            "updatedAt": format_datetime(role.update_at),
         })
 
     total_pages = total // page_size
@@ -155,13 +155,51 @@ async def delete_role(db: AsyncSession, role_id: int) -> None:
     await db.commit()
 
 
-async def get_role_authorize(db: AsyncSession, role_id: int) -> List[int]:
+async def get_role_authorize(db: AsyncSession, role_id: int) -> dict:
     """获取角色授权信息"""
     role = await get_role_by_id(db, role_id)
     if not role:
         raise ValueError("角色不存在")
 
-    return [menu.id for menu in role.menus]
+    role_menu_ids = {menu.id for menu in role.menus}
+    default_checked_keys = [str(mid) for mid in role_menu_ids]
+
+    # 查询所有菜单（用于构建完整树形结构）
+    result = await db.execute(
+        select(SysMenu)
+        .where(and_(SysMenu.is_deleted == 0))
+        .order_by(SysMenu.order)
+    )
+    all_menus = result.scalars().all()
+
+    tree_data = _build_authorize_tree(all_menus, None, role_menu_ids)
+
+    return {
+        "defaultCheckedKeys": default_checked_keys,
+        "treeData": tree_data,
+    }
+
+
+def _build_authorize_tree(menus: List[SysMenu], parent_id: Optional[int], role_menu_ids: set) -> List[dict]:
+    """构建授权菜单树（只包含当前角色拥有的菜单）"""
+    tree = []
+    for menu in menus:
+        if menu.parent_id == parent_id:
+            children = _build_authorize_tree(menus, menu.id, role_menu_ids)
+            # 只保留角色拥有的菜单或包含子菜单的父级
+            if menu.id not in role_menu_ids and not children:
+                continue
+            node = {
+                "title": menu.label,
+                "value": str(menu.id),
+                "key": str(menu.id),
+                "type": menu.type,
+                "icon": menu.icon,
+            }
+            if children:
+                node["children"] = children
+            tree.append(node)
+    return tree
 
 
 async def save_role_authorize(db: AsyncSession, role_id: int, menu_ids: List[int]) -> None:

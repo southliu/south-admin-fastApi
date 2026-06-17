@@ -4,6 +4,13 @@ from sqlalchemy import DateTime, func
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
 
 
+def format_datetime(dt: datetime | None) -> str | None:
+    """格式化时间为 YYYY-MM-DD HH:mm:ss"""
+    if dt is None:
+        return None
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 class Base(DeclarativeBase):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True, comment="主键ID")
     create_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="创建时间")

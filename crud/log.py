@@ -4,6 +4,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.system.log import SysLog
+from models.base import format_datetime
 from schemas.log import CreateLogRequest
 
 
@@ -65,7 +66,7 @@ async def get_log_page(
             "status": log.status,
             "error": log.error,
             "type": log.type,
-            "createdAt": log.create_at,
+            "createdAt": format_datetime(log.create_at),
         })
 
     total_pages = total // page_size

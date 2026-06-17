@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from models.system.menu import SysMenu
 from models.system.permission import SysPermission
+from models.base import format_datetime
 from schemas.menu import CreateMenuRequest, UpdateMenuRequest, ChangeMenuStateRequest
 
 
@@ -28,27 +29,40 @@ async def get_menu_list(db: AsyncSession, user_id: int) -> List[dict]:
     if not user:
         return []
 
-    # 获取用户所有角色的菜单ID
-    menu_ids = set()
+    # 从角色关联的菜单中获取 permission_id
+    permission_ids = set()
     for role in user.roles:
         for menu in role.menus:
-            menu_ids.add(menu.id)
+            if menu.permission_id:
+                permission_ids.add(menu.permission_id)
 
-    if not menu_ids:
+    if not permission_ids:
         return []
 
-    # 查询所有相关菜单
+    # 查询有权限的菜单ID（排除按钮类型）
+    permitted_result = await db.execute(
+        select(SysMenu.id).where(and_(
+            SysMenu.permission_id.in_(permission_ids),
+            SysMenu.is_deleted == 0,
+            SysMenu.type != 3
+        ))
+    )
+    permitted_menu_ids = set(permitted_result.scalars().all())
+
+    if not permitted_menu_ids:
+        return []
+
+    # 查询所有可见菜单（包含父级目录）
     result = await db.execute(
         select(SysMenu)
-        .where(and_(SysMenu.id.in_(menu_ids), SysMenu.is_deleted == 0, SysMenu.state == 1))
+        .where(and_(SysMenu.is_deleted == 0, SysMenu.state == 1))
         .options(selectinload(SysMenu.permission))
-        .options(selectinload(SysMenu.children))
         .order_by(SysMenu.order)
     )
-    menus = result.scalars().all()
+    all_menus = result.scalars().all()
 
-    # 构建树形结构
-    return build_menu_tree(menus, None)
+    # 构建树形结构（只保留用户有权限的分支）
+    return build_menu_tree(all_menus, None, allowed_ids=permitted_menu_ids)
 
 
 async def get_menu_page(
@@ -70,7 +84,7 @@ async def get_menu_page(
     if state is not None:
         query = query.where(SysMenu.state == state)
     if rule:
-        query = query.where(SysMenu.rule.like(f"%{rule}%"))
+        query = query.join(SysPermission, SysMenu.permission_id == SysPermission.id).where(SysPermission.name.like(f"%{rule}%"))
 
     # 查询总数
     count_query = select(func.count()).select_from(query.subquery())
@@ -82,8 +96,8 @@ async def get_menu_page(
     result = await db.execute(query)
     menus = result.scalars().all()
 
-    # 构建树形结构
-    items = build_menu_tree(menus, None)
+    # 构建树形结构（包含所有类型）
+    items = build_menu_tree(menus, None, include_button=True)
 
     total_pages = total // page_size
     if total % page_size > 0:
@@ -111,28 +125,38 @@ async def get_menu_detail(db: AsyncSession, menu_id: int) -> dict:
         "icon": menu.icon,
         "type": menu.type,
         "router": menu.router,
-        "rule": menu.permission.name if menu.permission else menu.rule,
+        "rule": menu.permission.name if menu.permission else None,
         "order": menu.order,
         "state": menu.state,
         "parentId": menu.parent_id,
         "permissionId": menu.permission_id,
-        "createdAt": menu.create_at,
-        "updatedAt": menu.update_at,
+        "createdAt": format_datetime(menu.create_at),
+        "updatedAt": format_datetime(menu.update_at),
     }
 
 
 async def create_menu(db: AsyncSession, data: CreateMenuRequest, user_id: int) -> SysMenu:
     """创建菜单"""
+    permission_id = None
+
+    # 如果有 rule，自动创建权限记录
+    if data.rule:
+        permission = SysPermission(name=data.rule)
+        db.add(permission)
+        await db.flush()
+        await db.refresh(permission)
+        permission_id = permission.id
+
     menu = SysMenu(
         label=data.label,
         label_en=data.label_en,
         type=data.type,
         icon=data.icon,
         router=data.router,
-        rule=data.rule,
         order=data.order,
         state=data.state,
         parent_id=data.parent_id,
+        permission_id=permission_id,
     )
 
     db.add(menu)
@@ -155,14 +179,23 @@ async def update_menu(db: AsyncSession, menu_id: int, data: UpdateMenuRequest) -
         menu.icon = data.icon
     if data.router is not None:
         menu.router = data.router
-    if data.rule is not None:
-        menu.rule = data.rule
     if data.order is not None:
         menu.order = data.order
     if data.state is not None:
         menu.state = data.state
     if data.parent_id is not None:
         menu.parent_id = data.parent_id
+
+    # 同步权限
+    if data.rule is not None:
+        if menu.permission:
+            menu.permission.name = data.rule
+        else:
+            permission = SysPermission(name=data.rule)
+            db.add(permission)
+            await db.flush()
+            await db.refresh(permission)
+            menu.permission_id = permission.id
 
     await db.flush()
     await db.refresh(menu)
@@ -218,12 +251,15 @@ async def change_menu_state(db: AsyncSession, data: ChangeMenuStateRequest) -> N
     await db.flush()
 
 
-def build_menu_tree(menus: List[SysMenu], parent_id: Optional[int]) -> List[dict]:
+def build_menu_tree(menus: List[SysMenu], parent_id: Optional[int], include_button: bool = False, allowed_ids: Optional[set] = None) -> List[dict]:
     """构建菜单树形结构"""
     tree = []
     for menu in menus:
-        if menu.parent_id == parent_id and menu.type != 3:
-            children = build_menu_tree(menus, menu.id)
+        if menu.parent_id == parent_id and (include_button or menu.type != 3):
+            children = build_menu_tree(menus, menu.id, include_button, allowed_ids)
+            # 如果有权限过滤，只保留有权限的菜单或包含有权限子菜单的父级
+            if allowed_ids is not None and menu.id not in allowed_ids and not children:
+                continue
             node = {
                 "id": menu.id,
                 "label": menu.label,
@@ -235,13 +271,13 @@ def build_menu_tree(menus: List[SysMenu], parent_id: Optional[int]) -> List[dict
                 "icon": menu.icon,
                 "type": menu.type,
                 "router": menu.router,
-                "rule": menu.permission.name if menu.permission else menu.rule,
+                "rule": menu.permission.name if menu.permission else None,
                 "order": menu.order,
                 "state": menu.state,
                 "parentId": menu.parent_id,
                 "permissionId": menu.permission_id,
-                "createdAt": menu.create_at,
-                "updatedAt": menu.update_at,
+                "createdAt": format_datetime(menu.create_at),
+                "updatedAt": format_datetime(menu.update_at),
             }
             if children:
                 node["children"] = children
