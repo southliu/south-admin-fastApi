@@ -60,7 +60,7 @@ async def get_menu_page(
     state: Optional[int] = None,
     rule: Optional[str] = None
 ) -> dict:
-    """获取菜单分页列表"""
+    """获取菜单分页列表（树形结构）"""
     query = select(SysMenu).where(SysMenu.is_deleted == 0)
 
     if label:
@@ -77,30 +77,13 @@ async def get_menu_page(
     total_result = await db.execute(count_query)
     total = total_result.scalar()
 
-    # 分页查询
-    offset = (page - 1) * page_size
-    query = query.options(selectinload(SysMenu.permission)).offset(offset).limit(page_size).order_by(SysMenu.order)
+    # 查询所有菜单并构建树形结构
+    query = query.options(selectinload(SysMenu.permission)).order_by(SysMenu.order)
     result = await db.execute(query)
     menus = result.scalars().all()
 
-    # 构建返回数据
-    items = []
-    for menu in menus:
-        items.append({
-            "id": menu.id,
-            "label": menu.label,
-            "labelEn": menu.label_en,
-            "icon": menu.icon,
-            "type": menu.type,
-            "router": menu.router,
-            "rule": menu.permission.name if menu.permission else menu.rule,
-            "order": menu.order,
-            "state": menu.state,
-            "parentId": menu.parent_id,
-            "permissionId": menu.permission_id,
-            "createdAt": menu.create_at,
-            "updatedAt": menu.update_at,
-        })
+    # 构建树形结构
+    items = build_menu_tree(menus, None)
 
     total_pages = total // page_size
     if total % page_size > 0:
