@@ -93,7 +93,7 @@ async def create_permission(db: AsyncSession, data: CreatePermissionRequest) -> 
     )
 
     db.add(permission)
-    await db.commit()
+    await db.flush()
     await db.refresh(permission)
     return permission
 
@@ -114,7 +114,7 @@ async def update_permission(db: AsyncSession, permission_id: int, data: UpdatePe
     if data.description is not None:
         permission.description = data.description
 
-    await db.commit()
+    await db.flush()
     await db.refresh(permission)
     return permission
 
@@ -128,4 +128,4 @@ async def delete_permission(db: AsyncSession, permission_id: int) -> None:
     from datetime import datetime
     permission.is_deleted = 1
     permission.deleted_at = datetime.now()
-    await db.commit()
+    await db.flush()

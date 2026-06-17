@@ -70,7 +70,11 @@ async def create_role_handler(
     """创建角色"""
     try:
         role = await create_role(db, req)
-        return ResponseModel(code=200, message="创建成功", data=role)
+        return ResponseModel(code=200, message="创建成功", data={
+            "id": role.id,
+            "name": role.name,
+            "description": role.description,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 
@@ -85,7 +89,11 @@ async def update_role_handler(
     """更新角色"""
     try:
         role = await update_role(db, role_id, req)
-        return ResponseModel(code=200, message="更新成功", data=role)
+        return ResponseModel(code=200, message="更新成功", data={
+            "id": role.id,
+            "name": role.name,
+            "description": role.description,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 
@@ -127,13 +135,13 @@ async def get_role_list_handler(
 
 @router.get("/authorize", response_model=ResponseModel)
 async def get_role_authorize_handler(
-    role_id: int,
+    roleId: int,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
     """获取角色授权信息"""
     try:
-        menu_ids = await get_role_authorize(db, role_id)
+        menu_ids = await get_role_authorize(db, roleId)
         return ResponseModel(code=200, message="获取成功", data=menu_ids)
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))

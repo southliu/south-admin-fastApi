@@ -23,7 +23,7 @@ async def create_log(db: AsyncSession, data: CreateLogRequest) -> SysLog:
     )
 
     db.add(log)
-    await db.commit()
+    await db.flush()
     return log
 
 
@@ -91,7 +91,7 @@ async def delete_log(db: AsyncSession, log_id: int) -> None:
         raise ValueError("日志不存在")
 
     await db.delete(log)
-    await db.commit()
+    await db.flush()
 
 
 async def batch_delete_log(db: AsyncSession, log_ids: List[int]) -> None:
@@ -104,4 +104,4 @@ async def batch_delete_log(db: AsyncSession, log_ids: List[int]) -> None:
         if log:
             await db.delete(log)
 
-    await db.commit()
+    await db.flush()

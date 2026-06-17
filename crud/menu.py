@@ -93,7 +93,7 @@ async def get_menu_page(
             "icon": menu.icon,
             "type": menu.type,
             "router": menu.router,
-            "rule": menu.rule,
+            "rule": menu.permission.name if menu.permission else menu.rule,
             "order": menu.order,
             "state": menu.state,
             "parentId": menu.parent_id,
@@ -128,7 +128,7 @@ async def get_menu_detail(db: AsyncSession, menu_id: int) -> dict:
         "icon": menu.icon,
         "type": menu.type,
         "router": menu.router,
-        "rule": menu.rule,
+        "rule": menu.permission.name if menu.permission else menu.rule,
         "order": menu.order,
         "state": menu.state,
         "parentId": menu.parent_id,
@@ -153,7 +153,7 @@ async def create_menu(db: AsyncSession, data: CreateMenuRequest, user_id: int) -
     )
 
     db.add(menu)
-    await db.commit()
+    await db.flush()
     await db.refresh(menu)
     return menu
 
@@ -181,7 +181,7 @@ async def update_menu(db: AsyncSession, menu_id: int, data: UpdateMenuRequest) -
     if data.parent_id is not None:
         menu.parent_id = data.parent_id
 
-    await db.commit()
+    await db.flush()
     await db.refresh(menu)
     return menu
 
@@ -193,22 +193,36 @@ async def delete_menu(db: AsyncSession, menu_id: int) -> None:
         raise ValueError("菜单不存在")
 
     from datetime import datetime
+    from models.system.role import role_menu
+
+    # 先删除角色-菜单关联关系
+    await db.execute(
+        role_menu.delete().where(role_menu.c.menu_id == menu_id)
+    )
+
     menu.is_deleted = 1
     menu.deleted_at = datetime.now()
-    await db.commit()
+    await db.flush()
 
 
 async def batch_delete_menu(db: AsyncSession, menu_ids: List[int]) -> None:
     """批量删除菜单"""
     from datetime import datetime
+    from models.system.role import role_menu
 
+    # 先删除角色-菜单关联关系
+    await db.execute(
+        role_menu.delete().where(role_menu.c.menu_id.in_(menu_ids))
+    )
+
+    # 软删除菜单
     for menu_id in menu_ids:
         menu = await get_menu_by_id(db, menu_id)
         if menu:
             menu.is_deleted = 1
             menu.deleted_at = datetime.now()
 
-    await db.commit()
+    await db.flush()
 
 
 async def change_menu_state(db: AsyncSession, data: ChangeMenuStateRequest) -> None:
@@ -218,33 +232,35 @@ async def change_menu_state(db: AsyncSession, data: ChangeMenuStateRequest) -> N
         raise ValueError("菜单不存在")
 
     menu.state = data.state
-    await db.commit()
+    await db.flush()
 
 
 def build_menu_tree(menus: List[SysMenu], parent_id: Optional[int]) -> List[dict]:
     """构建菜单树形结构"""
     tree = []
     for menu in menus:
-        if menu.parent_id == parent_id:
+        if menu.parent_id == parent_id and menu.type != 3:
+            children = build_menu_tree(menus, menu.id)
             node = {
                 "id": menu.id,
                 "label": menu.label,
                 "labelEn": menu.label_en,
                 "title": menu.label,
                 "titleEn": menu.label_en,
-                "key": str(menu.id),
+                "key": menu.router,
                 "value": str(menu.id),
                 "icon": menu.icon,
                 "type": menu.type,
                 "router": menu.router,
-                "rule": menu.rule,
+                "rule": menu.permission.name if menu.permission else menu.rule,
                 "order": menu.order,
                 "state": menu.state,
                 "parentId": menu.parent_id,
                 "permissionId": menu.permission_id,
                 "createdAt": menu.create_at,
                 "updatedAt": menu.update_at,
-                "children": build_menu_tree(menus, menu.id),
             }
+            if children:
+                node["children"] = children
             tree.append(node)
     return tree
