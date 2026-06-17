@@ -65,7 +65,11 @@ async def create_permission_handler(
     """创建权限"""
     try:
         permission = await create_permission(db, req)
-        return ResponseModel(code=200, message="创建成功", data=permission)
+        return ResponseModel(code=200, message="创建成功", data={
+            "id": permission.id,
+            "name": permission.name,
+            "description": permission.description,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 
@@ -80,7 +84,11 @@ async def update_permission_handler(
     """更新权限"""
     try:
         permission = await update_permission(db, permission_id, req)
-        return ResponseModel(code=200, message="更新成功", data=permission)
+        return ResponseModel(code=200, message="更新成功", data={
+            "id": permission.id,
+            "name": permission.name,
+            "description": permission.description,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 

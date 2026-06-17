@@ -75,7 +75,18 @@ async def create_menu_handler(
     """创建菜单"""
     try:
         menu = await create_menu(db, req, current_user.id)
-        return ResponseModel(code=200, message="创建成功", data=menu)
+        return ResponseModel(code=200, message="创建成功", data={
+            "id": menu.id,
+            "label": menu.label,
+            "labelEn": menu.label_en,
+            "type": menu.type,
+            "icon": menu.icon,
+            "router": menu.router,
+            "rule": menu.rule,
+            "order": menu.order,
+            "state": menu.state,
+            "parentId": menu.parent_id,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 
@@ -90,7 +101,18 @@ async def update_menu_handler(
     """更新菜单"""
     try:
         menu = await update_menu(db, menu_id, req)
-        return ResponseModel(code=200, message="更新成功", data=menu)
+        return ResponseModel(code=200, message="更新成功", data={
+            "id": menu.id,
+            "label": menu.label,
+            "labelEn": menu.label_en,
+            "type": menu.type,
+            "icon": menu.icon,
+            "router": menu.router,
+            "rule": menu.rule,
+            "order": menu.order,
+            "state": menu.state,
+            "parentId": menu.parent_id,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 

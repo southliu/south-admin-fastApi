@@ -12,7 +12,7 @@ class SysMenu(Base):
 
     label: Mapped[str] = mapped_column(String(50), nullable=False, comment="菜单名称")
     label_en: Mapped[str] = mapped_column(String(50), nullable=False, comment="英文名称")
-    icon: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="图标")
+    icon: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="图标")
     type: Mapped[int] = mapped_column(Integer, comment="类型 1=目录 2=菜单 3=按钮")
     router: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="路由地址")
     rule: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="权限规则")

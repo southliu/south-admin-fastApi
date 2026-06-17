@@ -1,9 +1,9 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from schemas.base import CamelModel
 
 
-class CreateLogRequest(BaseModel):
+class CreateLogRequest(CamelModel):
     username: Optional[str] = None
     ip: Optional[str] = None
     method: Optional[str] = None

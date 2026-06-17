@@ -1,20 +1,20 @@
 from typing import Optional, List
 
-from pydantic import BaseModel
+from schemas.base import CamelModel
 
 
-class CreateRoleRequest(BaseModel):
+class CreateRoleRequest(CamelModel):
     name: str
     description: Optional[str] = None
     authorize: Optional[List[int]] = None
 
 
-class UpdateRoleRequest(BaseModel):
+class UpdateRoleRequest(CamelModel):
     name: str
     description: Optional[str] = None
     authorize: Optional[List[int]] = None
 
 
-class AuthorizeRoleRequest(BaseModel):
+class AuthorizeRoleRequest(CamelModel):
     role_id: int
     menu_ids: List[int]

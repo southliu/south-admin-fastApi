@@ -142,10 +142,10 @@ async def get_user_detail(
             "email": user.email,
             "phone": user.phone,
             "status": user.status,
-            "role_ids": roles,
+            "roleIds": roles,
             "roles": [{"id": role.id, "name": role.name} for role in user.roles],
-            "created_at": user.create_at,
-            "updated_at": user.update_at,
+            "createdAt": user.create_at,
+            "updatedAt": user.update_at,
         }
     )
 
@@ -159,7 +159,14 @@ async def create_user_handler(
     """创建用户"""
     try:
         user = await create_user(db, req)
-        return ResponseModel(code=200, message="创建成功", data=user)
+        return ResponseModel(code=200, message="创建成功", data={
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "status": user.status,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 
@@ -174,7 +181,14 @@ async def update_user_handler(
     """更新用户"""
     try:
         user = await update_user(db, user_id, req)
-        return ResponseModel(code=200, message="更新成功", data=user)
+        return ResponseModel(code=200, message="更新成功", data={
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "status": user.status,
+        })
     except ValueError as e:
         raise HTTPException(status_code=200, detail=str(e))
 

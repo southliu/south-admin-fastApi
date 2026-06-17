@@ -1,21 +1,21 @@
 from typing import Optional, List
 
-from pydantic import BaseModel
+from schemas.base import CamelModel
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(CamelModel):
     username: str
     password: str
 
 
-class LoginResponse(BaseModel):
+class LoginResponse(CamelModel):
     token: str
     user: "UserInfo"
     roles: List[int]
     permissions: List[str]
 
 
-class UserInfo(BaseModel):
+class UserInfo(CamelModel):
     id: int
     username: str
     name: Optional[str] = None
@@ -25,7 +25,7 @@ class UserInfo(BaseModel):
     roles: List[int] = []
 
 
-class CreateUserRequest(BaseModel):
+class CreateUserRequest(CamelModel):
     username: str
     password: str
     name: Optional[str] = None
@@ -35,7 +35,7 @@ class CreateUserRequest(BaseModel):
     role_ids: List[int] = []
 
 
-class UpdateUserRequest(BaseModel):
+class UpdateUserRequest(CamelModel):
     username: str
     password: Optional[str] = None
     name: Optional[str] = None
@@ -45,13 +45,13 @@ class UpdateUserRequest(BaseModel):
     role_ids: Optional[List[int]] = None
 
 
-class UpdatePasswordRequest(BaseModel):
+class UpdatePasswordRequest(CamelModel):
     old_password: str
     new_password: str
     confirm_password: str
 
 
-class RefreshPermissionsResponse(BaseModel):
+class RefreshPermissionsResponse(CamelModel):
     user: UserInfo
     permissions: List[str]
     roles: List[int]

@@ -54,8 +54,8 @@ async def get_role_detail(
             "id": role.id,
             "name": role.name,
             "description": role.description,
-            "created_at": role.create_at,
-            "updated_at": role.update_at,
+            "createdAt": role.create_at,
+            "updatedAt": role.update_at,
             "authorize": menu_ids,
         }
     )

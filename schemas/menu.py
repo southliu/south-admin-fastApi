@@ -1,9 +1,9 @@
 from typing import Optional, List
 
-from pydantic import BaseModel
+from schemas.base import CamelModel
 
 
-class CreateMenuRequest(BaseModel):
+class CreateMenuRequest(CamelModel):
     label: str
     label_en: str
     type: int
@@ -16,7 +16,7 @@ class CreateMenuRequest(BaseModel):
     actions: Optional[List[str]] = None
 
 
-class UpdateMenuRequest(BaseModel):
+class UpdateMenuRequest(CamelModel):
     label: str
     label_en: str
     type: Optional[int] = None
@@ -28,10 +28,10 @@ class UpdateMenuRequest(BaseModel):
     parent_id: Optional[int] = None
 
 
-class ChangeMenuStateRequest(BaseModel):
+class ChangeMenuStateRequest(CamelModel):
     id: int
     state: int
 
 
-class BatchDeleteRequest(BaseModel):
+class BatchDeleteRequest(CamelModel):
     ids: List[int]

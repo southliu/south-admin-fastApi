@@ -1,13 +1,13 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from schemas.base import CamelModel
 
 
-class CreatePermissionRequest(BaseModel):
+class CreatePermissionRequest(CamelModel):
     name: str
     description: Optional[str] = None
 
 
-class UpdatePermissionRequest(BaseModel):
+class UpdatePermissionRequest(CamelModel):
     name: str
     description: Optional[str] = None
