@@ -107,12 +107,14 @@ async def create_role(db: AsyncSession, data: CreateRoleRequest) -> SysRole:
     )
 
     db.add(role)
-    await db.commit()
+    await db.flush()
+    await db.refresh(role)
 
     # 关联菜单
     if data.authorize:
         await update_role_menus(db, role.id, data.authorize)
-        await db.commit()
+
+    await db.commit()
 
     return role
 
@@ -133,12 +135,13 @@ async def update_role(db: AsyncSession, role_id: int, data: UpdateRoleRequest) -
     if data.description is not None:
         role.description = data.description
 
-    await db.commit()
+    await db.flush()
 
     # 更新菜单关联
     if data.authorize is not None:
         await update_role_menus(db, role_id, data.authorize)
-        await db.commit()
+
+    await db.commit()
 
     return role
 

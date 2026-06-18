@@ -122,12 +122,14 @@ async def create_user(db: AsyncSession, data: CreateUserRequest) -> SysUser:
     )
 
     db.add(user)
-    await db.commit()
+    await db.flush()
+    await db.refresh(user)
 
     # 关联角色
     if data.role_ids:
         await update_user_roles(db, user.id, data.role_ids)
-        await db.commit()
+
+    await db.commit()
 
     return user
 
@@ -156,12 +158,13 @@ async def update_user(db: AsyncSession, user_id: int, data: UpdateUserRequest) -
     if data.status is not None:
         user.status = data.status
 
-    await db.commit()
+    await db.flush()
 
     # 更新角色关联
     if data.role_ids is not None:
         await update_user_roles(db, user_id, data.role_ids)
-        await db.commit()
+
+    await db.commit()
 
     return user
 
