@@ -14,14 +14,6 @@ role_menu = Table(
     Column("menu_id", Integer, ForeignKey("sys_menu.id"), primary_key=True),
 )
 
-# 角色-权限关联表
-role_permission = Table(
-    "sys_role_permission",
-    Base.metadata,
-    Column("role_id", Integer, ForeignKey("sys_role.id"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("sys_permission.id"), primary_key=True),
-)
-
 class SysRole(Base):
     __tablename__ = "sys_role"
 
@@ -33,7 +25,6 @@ class SysRole(Base):
     # 关联关系
     users: Mapped[List["SysUser"]] = relationship("SysUser", secondary="sys_user_role", back_populates="roles", lazy="selectin")
     menus: Mapped[List["SysMenu"]] = relationship("SysMenu", secondary=role_menu, back_populates="roles", lazy="selectin")
-    permissions: Mapped[List["SysPermission"]] = relationship("SysPermission", secondary=role_permission, back_populates="roles", lazy="selectin")
 
     def __repr__(self):
         return f"<SysRole(id={self.id}, name={self.name})>"

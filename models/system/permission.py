@@ -17,7 +17,6 @@ class SysPermission(Base):
 
     # 关联关系
     menus: Mapped[List["SysMenu"]] = relationship("SysMenu", back_populates="permission", lazy="selectin")
-    roles: Mapped[List["SysRole"]] = relationship("SysRole", secondary="sys_role_permission", back_populates="permissions", lazy="selectin")
 
     def __repr__(self):
         return f"<SysPermission(id={self.id}, name={self.name})>"

@@ -6,7 +6,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 -- 删除现有数据
 DELETE FROM `sys_user_role`;
-DELETE FROM `sys_role_permission`;
 DELETE FROM `sys_role_menu`;
 DELETE FROM `sys_menu`;
 DELETE FROM `sys_permission`;
@@ -63,49 +62,16 @@ VALUES
     ('/content/article/update', '修改文章', NOW(), NOW(), 0),
     ('/content/article/view', '查看文章', NOW(), NOW(), 0),
     ('/content/article/delete', '删除文章', NOW(), NOW(), 0),
-    ('/link', '外部链接', NOW(), NOW(), 0);
+    ('/link', '外部链接', NOW(), NOW(), 0),
+    ('/authority/log', '日志管理', NOW(), NOW(), 0),
+    ('/authority/log/index', '日志列表', NOW(), NOW(), 0),
+    ('/authority/log/delete', '删除日志', NOW(), NOW(), 0);
 
 -- 关联用户与角色
 INSERT INTO `sys_user_role` (user_id, role_id)
 VALUES
     ((SELECT id FROM `sys_user` WHERE username='admin'), (SELECT id FROM `sys_role` WHERE name='admin')),
     ((SELECT id FROM `sys_user` WHERE username='user1'), (SELECT id FROM `sys_role` WHERE name='user'));
-
--- 关联角色与权限
-INSERT INTO `sys_role_permission` (role_id, permission_id)
-VALUES
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/dashboard')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo/copy')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo/editor')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo/wangEditor')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo/virtualScroll')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/demo/watermark')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/index')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/create')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/update')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/view')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/delete')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/user/authority')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role/index')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role/create')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role/update')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role/view')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/role/delete')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu/index')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu/create')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu/update')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu/view')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/authority/menu/delete')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article/index')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article/create')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article/update')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article/view')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_permission` WHERE name='/content/article/delete'));
 
 -- 禁用外键约束检查
 SET FOREIGN_KEY_CHECKS = 0;
@@ -187,6 +153,10 @@ FROM (SELECT id FROM `sys_menu` WHERE router = '/system') AS parent_menu;
 
 INSERT INTO `sys_menu` (label, label_en, type, icon, router, `order`, state, create_at, update_at, parent_id, is_deleted, permission_id)
 SELECT '角色管理', 'Role Management', 2, NULL, '/system/role', 2, 1, NOW(), NOW(), parent_menu.id, 0, (SELECT id FROM `sys_permission` WHERE name = '/authority/role')
+FROM (SELECT id FROM `sys_menu` WHERE router = '/system') AS parent_menu;
+
+INSERT INTO `sys_menu` (label, label_en, type, icon, router, `order`, state, create_at, update_at, parent_id, is_deleted, permission_id)
+SELECT '日志管理', 'Log Management', 2, NULL, '/system/log', 99, 1, NOW(), NOW(), parent_menu.id, 0, (SELECT id FROM `sys_permission` WHERE name = '/authority/log')
 FROM (SELECT id FROM `sys_menu` WHERE router = '/system') AS parent_menu;
 
 -- 插入内容管理子菜单
@@ -282,6 +252,15 @@ INSERT INTO `sys_menu` (label, label_en, type, router, `order`, state, create_at
 SELECT '删除文章', 'Delete', 3, '/content/article', 4, 1, NOW(), NOW(), parent_menu.id, 0, (SELECT id FROM `sys_permission` WHERE name = '/content/article/delete')
 FROM (SELECT id FROM `sys_menu` WHERE label = '文章管理') AS parent_menu;
 
+-- 插入日志管理按钮菜单
+INSERT INTO `sys_menu` (label, label_en, type, router, `order`, state, create_at, update_at, parent_id, is_deleted, permission_id)
+SELECT '日志列表', 'Index', 3, '/system/log', 0, 1, NOW(), NOW(), parent_menu.id, 0, (SELECT id FROM `sys_permission` WHERE name = '/authority/log/index')
+FROM (SELECT id FROM `sys_menu` WHERE label = '日志管理') AS parent_menu;
+
+INSERT INTO `sys_menu` (label, label_en, type, router, `order`, state, create_at, update_at, parent_id, is_deleted, permission_id)
+SELECT '删除日志', 'Delete', 3, '/system/log', 1, 1, NOW(), NOW(), parent_menu.id, 0, (SELECT id FROM `sys_permission` WHERE name = '/authority/log/delete')
+FROM (SELECT id FROM `sys_menu` WHERE label = '日志管理') AS parent_menu;
+
 -- 关联角色与菜单（顶级菜单）
 INSERT INTO `sys_role_menu` (role_id, menu_id)
 VALUES
@@ -301,7 +280,8 @@ VALUES
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='用户管理')),
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='菜单管理')),
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='角色管理')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='文章管理'));
+    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='文章管理')),
+    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='日志管理'));
 
 -- 关联角色与菜单（按钮菜单）
 INSERT INTO `sys_role_menu` (role_id, menu_id)
@@ -326,7 +306,9 @@ VALUES
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='查看文章')),
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='创建文章')),
     ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='修改文章')),
-    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='删除文章'));
+    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='删除文章')),
+    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='日志列表')),
+    ((SELECT id FROM `sys_role` WHERE name='admin'), (SELECT id FROM `sys_menu` WHERE label='删除日志'));
 
 -- 提交事务
 COMMIT;

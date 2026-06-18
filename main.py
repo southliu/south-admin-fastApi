@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from core.router import api_router
 from core.database import create_tables
+from middleware.log import LogMiddleware
 
 
 @asynccontextmanager
@@ -13,6 +14,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="South Admin API", version="0.1.0", lifespan=lifespan)
+
+# 注册日志中间件
+app.add_middleware(LogMiddleware)
 
 
 @app.get("/")

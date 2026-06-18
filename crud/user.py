@@ -19,7 +19,6 @@ async def get_user_by_username(db: AsyncSession, username: str) -> Optional[SysU
         .where(and_(SysUser.username == username, SysUser.is_deleted == 0))
         .options(
             selectinload(SysUser.roles).selectinload(SysRole.menus).selectinload(SysMenu.permission),
-            selectinload(SysUser.roles).selectinload(SysRole.permissions),
         )
     )
     return result.scalar_one_or_none()
@@ -32,7 +31,6 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> Optional[SysUser]:
         .where(and_(SysUser.id == user_id, SysUser.is_deleted == 0))
         .options(
             selectinload(SysUser.roles).selectinload(SysRole.menus).selectinload(SysMenu.permission),
-            selectinload(SysUser.roles).selectinload(SysRole.permissions),
         )
     )
     return result.scalar_one_or_none()
