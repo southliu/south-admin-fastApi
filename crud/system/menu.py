@@ -51,7 +51,7 @@ async def get_menu_by_id(db: AsyncSession, menu_id: int) -> Optional[SysMenu]:
 
 async def get_menu_list(db: AsyncSession, user_id: int) -> List[dict]:
     """获取用户菜单列表"""
-    from crud.user import get_user_by_id
+    from crud.system.user import get_user_by_id
 
     user = await get_user_by_id(db, user_id)
     if not user:
