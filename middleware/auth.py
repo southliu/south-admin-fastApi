@@ -1,43 +1,48 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db
 from utils.security import decode_access_token
 from crud.user import get_user_by_id
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db)
 ):
     """获取当前用户"""
+    if not credentials:
+        return JSONResponse(
+            status_code=200,
+            content={"code": 401, "data": "", "message": "无效权限访问"},
+        )
+
     token = credentials.credentials
     payload = decode_access_token(token)
 
     if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证凭据",
-            headers={"WWW-Authenticate": "Bearer"},
+        return JSONResponse(
+            status_code=200,
+            content={"code": 401, "data": "", "message": "无效权限访问"},
         )
 
     user_id = payload.get("sub")
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证凭据",
-            headers={"WWW-Authenticate": "Bearer"},
+        return JSONResponse(
+            status_code=200,
+            content={"code": 401, "data": "", "message": "无效权限访问"},
         )
 
     user = await get_user_by_id(db, int(user_id))
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户不存在",
-            headers={"WWW-Authenticate": "Bearer"},
+        return JSONResponse(
+            status_code=200,
+            content={"code": 401, "data": "", "message": "无效权限访问"},
         )
 
     return user
