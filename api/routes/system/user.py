@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.database import get_db
@@ -110,7 +110,7 @@ async def refresh_permissions(
 @router.get("/page", response_model=ResponseModel)
 async def get_user_page_list(
     page: int = 1,
-    page_size: int = 10,
+    page_size: int = Query(default=10, alias="pageSize"),
     username: str = None,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user)
