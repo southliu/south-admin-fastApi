@@ -148,7 +148,7 @@ async def batch_delete_menu_handler(
         raise HTTPException(status_code=200, detail=str(e))
 
 
-@router.post("/changeState", response_model=ResponseModel)
+@router.put("/changeState", response_model=ResponseModel)
 async def change_menu_state_handler(
     req: ChangeMenuStateRequest,
     db: AsyncSession = Depends(get_db),

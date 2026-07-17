@@ -242,18 +242,19 @@ async def update_menu(db: AsyncSession, menu_id: int, data: UpdateMenuRequest) -
 
     menu.label = data.label
     menu.label_en = data.label_en
+
+    # 可空字段：直接赋值，前端不传即为 None → 清空
+    menu.icon = data.icon
+    menu.router = data.router
+    menu.parent_id = data.parent_id
+
+    # 非空字段：仅在显式传入时才更新
     if data.type is not None:
         menu.type = data.type
-    if data.icon is not None:
-        menu.icon = data.icon
-    if data.router is not None:
-        menu.router = data.router
     if data.order is not None:
         menu.order = data.order
     if data.state is not None:
         menu.state = data.state
-    if data.parent_id is not None:
-        menu.parent_id = data.parent_id
 
     # 同步权限
     if data.rule is not None:
