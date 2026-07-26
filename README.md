@@ -105,3 +105,54 @@ docker exec admin bash -c "mysql -u root -p'your_password' --default-character-s
 ```
 Authorization: Bearer <token>
 ```
+
+## 部署操作
+
+### 0. 安装docker版本的python，已安装可跳过
+
+```shell
+docker pull python:3.14
+```
+
+### 1. 本地构建镜像
+
+```shell
+docker build -t south-admin-fastapi:v1 .
+# 本地导出为压缩包（约 450MB）
+docker save south-admin-fastapi:v1 -o south-admin-fastapi-v1.tar.gz
+```
+
+### 2. 服务器加载镜像
+
+```shell
+# 先停止运行中的容器（崩溃重启的也一样执行）
+docker stop south-admin-fastapi
+docker rm south-admin-fastapi
+# 再删除旧容器
+docker rmi south-admin-fastapi:v1
+
+# 2. 构建新镜像
+docker load -i /home/south-admin-fastapi-v1.tar.gz
+docker images | grep south-admin-fastapi
+
+# 3. 前台临时启动验证（确认不再报config.yaml缺失）
+docker run -d \
+--name south-admin-fastapi \
+--restart always \
+--network app-net \
+-p 9000:9000 \
+-v /home/south-admin-fastApi/config.yaml:/app/config.yaml \
+south-admin-fastapi:v1
+
+
+# 校验
+curl 127.0.0.1:9000
+
+# 查看日志
+docker logs south-admin-fastapi
+
+# 编辑nginx配置，调整端口指向，xxx:8000，9000端口启动也是使用8000端口，xxx变化
+vim /home/nginx/conf.d/default.conf
+docker exec nginx-app nginx -t
+docker exec nginx-app nginx -s reload
+```
