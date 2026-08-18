@@ -27,3 +27,5 @@ build/
 # Database
 *.db
 *.sqlite3
+
+south-admin-*.tar.gz
