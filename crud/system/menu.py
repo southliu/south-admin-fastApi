@@ -4,6 +4,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from crud.system.permission import get_permission_by_name
 from models.system.menu import SysMenu
 from models.system.permission import SysPermission
 from models.system.user import user_role
@@ -256,16 +257,18 @@ async def update_menu(db: AsyncSession, menu_id: int, data: UpdateMenuRequest) -
     if data.state is not None:
         menu.state = data.state
 
-    # 同步权限
-    if data.rule is not None:
+    # 同步权限：非空 → 复用/新建或重命名；空值（不传/传空）→ 解除关联，权限记录保留由权限管理维护
+    if data.rule:
         if menu.permission:
-            menu.permission.name = data.rule
+            if menu.permission.name != data.rule:
+                existing = await get_permission_by_name(db, data.rule)
+                if existing and existing.id != menu.permission_id:
+                    raise ValueError("权限名已存在")
+                menu.permission.name = data.rule
         else:
-            permission = SysPermission(name=data.rule)
-            db.add(permission)
-            await db.flush()
-            await db.refresh(permission)
-            menu.permission_id = permission.id
+            menu.permission = await get_or_create_permission(db, data.rule, data.label)
+    elif menu.permission:
+        menu.permission = None
 
     await db.commit()
     await db.refresh(menu)
